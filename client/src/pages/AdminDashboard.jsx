@@ -46,7 +46,7 @@ const AdminDashboard = () => {
         return (
           <div style={styles.card}>
             <h3 style={styles.contentTitle}>👥 ניהול צוות המדריכים</h3>
-            <InstructorManager />
+            <InstructorManager onInstructorsUpdated={loadAllData} />
           </div>
         );
       case 'allClients':

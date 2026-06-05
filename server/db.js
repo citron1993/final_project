@@ -171,7 +171,7 @@ const getStats = () => {
     id: instructor.id,
     name: instructor.name,
     username: instructor.username,
-    isActive: instructor.isActive,
+    isActive: instructor.isActive !== false,
     assigned: clients.filter((client) => String(client.instructorId) === String(instructor.id)).length,
     completed: clients.filter(
       (client) => String(client.instructorId) === String(instructor.id) && client.isTrained
@@ -195,7 +195,7 @@ const getStats = () => {
     completed,
     pending,
     waiting,
-    activeInstructors: instructors.filter((instructor) => instructor.isActive).length,
+    activeInstructors: instructors.filter((instructor) => instructor.isActive !== false).length,
     instructorStats
   };
 };

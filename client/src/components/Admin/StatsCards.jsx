@@ -13,9 +13,10 @@ const StatsCards = ({ stats }) => {
     <section style={styles.wrapper}>
       <div style={styles.grid}>
         {cardData.map((card) => (
-          <article key={card.title} style={{ ...styles.summaryCard, borderColor: card.color }}>
+          <article key={card.title} style={styles.summaryCard}>
+            <span style={{ ...styles.cardAccent, backgroundColor: card.color }} />
             <span style={styles.cardTitle}>{card.title}</span>
-            <strong style={{ ...styles.cardValue, color: card.color }}>{card.value || 0}</strong>
+            <strong style={styles.cardValue}>{card.value || 0}</strong>
           </article>
         ))}
       </div>
@@ -70,17 +71,26 @@ const styles = {
     gap: '12px'
   },
   summaryCard: {
+    position: 'relative',
+    overflow: 'hidden',
     backgroundColor: '#fff',
-    padding: '16px',
+    padding: '18px',
     borderRadius: '10px',
-    border: '1px solid',
+    border: '1px solid #e2e8f0',
     boxShadow: '0 4px 12px rgba(15, 23, 42, 0.06)',
     display: 'grid',
     gap: '8px',
     minHeight: '108px'
   },
+  cardAccent: {
+    position: 'absolute',
+    insetInlineStart: 0,
+    top: 0,
+    bottom: 0,
+    width: '4px'
+  },
   cardTitle: { fontSize: '14px', color: '#64748b', fontWeight: '700' },
-  cardValue: { fontSize: '30px', lineHeight: 1 },
+  cardValue: { fontSize: '30px', lineHeight: 1, color: '#1e293b' },
   sectionHeader: { display: 'grid', gap: '4px' },
   sectionTitle: { margin: 0, color: '#1e293b', fontSize: '20px' },
   sectionHint: { color: '#64748b', fontSize: '14px' },
