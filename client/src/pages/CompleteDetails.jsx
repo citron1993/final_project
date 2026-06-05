@@ -31,6 +31,22 @@ const CompleteDetails = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    const emptyRequiredFields = fields.filter(field => (
+      field.required && !String(formData[field.id] || '').trim()
+    ));
+
+    if (emptyRequiredFields.length > 0) {
+      const fieldNames = emptyRequiredFields.map(field => field.label).join(', ');
+      const approved = window.confirm(
+        `השדות הבאים ריקים: ${fieldNames}. האם להמשיך בכל זאת?`
+      );
+
+      if (!approved) {
+        return;
+      }
+    }
+
     try {
       // שליחת כל ה-formData (כולל השדות הנעולים) חזרה לשרת
       await axios.post(`http://localhost:5000/api/clients/complete-by-token/${token}`, formData);
@@ -63,7 +79,7 @@ const CompleteDetails = () => {
                 type={field.type === 'address' ? 'text' : field.type}
                 value={formData[field.id] || ''}
                 onChange={(e) => !isLocked && setFormData({ ...formData, [field.id]: e.target.value })}
-                required={field.required}
+                aria-required={field.required}
                 disabled={isLocked} // נעילת השדה
                 style={{
                   ...styles.input,

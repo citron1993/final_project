@@ -26,6 +26,22 @@ const ManualRegistration = ({ onClientAdded }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    const emptyRequiredFields = fields.filter(field => (
+      field.required && !String(formData[field.id] || '').trim()
+    ));
+
+    if (emptyRequiredFields.length > 0) {
+      const fieldNames = emptyRequiredFields.map(field => field.label).join(', ');
+      const approved = window.confirm(
+        `השדות הבאים ריקים: ${fieldNames}. האם להמשיך בכל זאת?`
+      );
+
+      if (!approved) {
+        return;
+      }
+    }
+
     try {
       await axios.post('http://localhost:5000/api/clients', formData);
       alert('דייר נרשם בהצלחה!');
@@ -46,7 +62,7 @@ const ManualRegistration = ({ onClientAdded }) => {
             <label style={labelStyle}>{field.label}</label>
             <input
               type={field.type}
-              required={field.required}
+              aria-required={field.required}
               style={inputStyle}
               value={formData[field.id] || ''}
               onChange={(e) => setFormData({ ...formData, [field.id]: e.target.value })}
