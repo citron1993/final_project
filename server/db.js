@@ -41,6 +41,11 @@ const defaultFormFields = [
   { id: 'address', label: 'Full address', type: 'address', required: true }
 ];
 
+const normalizeField = (field) => ({
+  ...field,
+  isActive: field.isActive !== false
+});
+
 const parseRow = (row) => {
   if (!row) {
     return null;
@@ -137,20 +142,22 @@ const updateInstructor = (id, updates) => {
   return updated;
 };
 
-const getFormFields = () => {
+const getFormFields = ({ includeInactive = false } = {}) => {
   const row = database.prepare('SELECT value FROM settings WHERE key = ?').get('formFields');
-  return parseRow(row) || [];
+  const fields = (parseRow(row) || []).map(normalizeField);
+  return includeInactive ? fields : fields.filter((field) => field.isActive);
 };
 
 const setFormFields = (fields) => {
+  const normalizedFields = fields.map(normalizeField);
   database
     .prepare(
       `INSERT INTO settings (key, value)
        VALUES (?, ?)
        ON CONFLICT(key) DO UPDATE SET value = excluded.value`
     )
-    .run('formFields', stringify(fields));
-  return fields;
+    .run('formFields', stringify(normalizedFields));
+  return normalizedFields;
 };
 
 const getStats = () => {

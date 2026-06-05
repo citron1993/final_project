@@ -181,7 +181,8 @@ app.delete('/api/clients/:id', (req, res) => {
 });
 
 app.post('/api/login', (req, res) => {
-  const { username, password } = req.body;
+  const username = String(req.body.username || '').trim();
+  const password = String(req.body.password || '').trim();
 
   if (username === 'admin' && password === '1234') {
     return res.json({ role: 'admin', user: { name: 'Admin', id: 'admin' } });
@@ -207,9 +208,27 @@ app.get('/api/instructors', (req, res) => {
 });
 
 app.post('/api/instructors', (req, res) => {
+  const name = String(req.body.name || '').trim();
+  const username = String(req.body.username || '').trim();
+  const password = String(req.body.password || '').trim();
+
+  if (!name || !username || !password) {
+    return res.status(400).json({ message: 'Name, username and password are required' });
+  }
+
+  const usernameExists = db
+    .getInstructors()
+    .some((item) => String(item.username || '').toLowerCase() === username.toLowerCase());
+
+  if (usernameExists || username.toLowerCase() === 'admin') {
+    return res.status(409).json({ message: 'Username already exists' });
+  }
+
   const newInstructor = {
     id: `inst_${Date.now()}`,
-    ...req.body,
+    name,
+    username,
+    password,
     isActive: true
   };
 
@@ -228,7 +247,8 @@ app.patch('/api/instructors/:id', (req, res) => {
 });
 
 app.get('/api/settings/fields', (req, res) => {
-  return res.json(db.getFormFields());
+  const includeInactive = req.query.includeInactive === 'true';
+  return res.json(db.getFormFields({ includeInactive }));
 });
 
 app.post('/api/settings/fields', (req, res) => {
