@@ -39,7 +39,11 @@ const AdminDashboard = () => {
         return (
           <div style={styles.fadeAnim}>
             <h3 style={styles.contentTitle}>📊 מבט על ומדדים</h3>
-            {stats ? <StatsCards stats={stats} /> : <p>טוען נתונים...</p>}
+            {stats ? (
+              <StatsCards stats={stats} clients={clients} instructors={instructors} />
+            ) : (
+              <p>טוען נתונים...</p>
+            )}
           </div>
         );
       case 'instructors':
