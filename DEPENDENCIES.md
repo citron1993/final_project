@@ -17,6 +17,7 @@ server/package.json
 | `express` | בניית שרת HTTP ו-REST API |
 | `cors` | פתיחת גישה מה-React client לשרת המקומי |
 | `node-geocoder` | המרת כתובות לקואורדינטות עבור מפה |
+| `better-sqlite3` | חיבור למסד נתונים SQLite מקומי |
 
 ### Development Dependencies
 
@@ -37,6 +38,14 @@ npm start
 ```bash
 npm run dev
 ```
+
+קובץ מסד הנתונים נוצר אוטומטית בזמן הרצת השרת:
+
+```text
+server/database.sqlite
+```
+
+הקובץ מוחרג מ-Git כדי לא להעלות נתוני runtime למאגר.
 
 ## Client
 

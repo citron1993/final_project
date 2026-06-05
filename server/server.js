@@ -1,252 +1,245 @@
 const express = require('express');
 const cors = require('cors');
 const crypto = require('crypto');
-const db = require('./db');
 const NodeGeocoder = require('node-geocoder');
+const db = require('./db');
 
 const app = express();
+const geocoder = NodeGeocoder({ provider: 'openstreetmap' });
 
 app.use(cors({ origin: 'http://localhost:5173' }));
 app.use(express.json());
 
-const geocoder = NodeGeocoder({ provider: 'openstreetmap' });
-
-// --- פונקציות עזר ---
 const processAddress = async (clientData) => {
-    const fields = db.formFields || [];
-    const addressField = fields.find(f => f.type === 'address');
-    
-    if (addressField && clientData[addressField.id]) {
-        try {
-            const res = await geocoder.geocode(clientData[addressField.id]);
-            if (res && res.length > 0) {
-                clientData.lat = res[0].latitude;
-                clientData.lng = res[0].longitude;
-            }
-        } catch (err) {
-            console.error("Geocoding error:", err);
-        }
+  const fields = db.getFormFields();
+  const addressField = fields.find((field) => field.type === 'address');
+
+  if (addressField && clientData[addressField.id]) {
+    try {
+      const result = await geocoder.geocode(clientData[addressField.id]);
+      if (result && result.length > 0) {
+        return {
+          ...clientData,
+          lat: result[0].latitude,
+          lng: result[0].longitude
+        };
+      }
+    } catch (err) {
+      console.error('Geocoding error:', err);
     }
-    return clientData;
+  }
+
+  return clientData;
 };
 
-// --- נתיבי דיירים (Clients) ---
-
 app.get('/api/clients', (req, res) => {
-    const { instructorId } = req.query;
-    if (instructorId) {
-        const filteredClients = db.clients.filter(c => String(c.instructorId) === String(instructorId));
-        return res.json(filteredClients);
-    }
-    res.json(db.clients);
+  const { instructorId } = req.query;
+
+  if (instructorId) {
+    return res.json(db.getClientsByInstructor(instructorId));
+  }
+
+  return res.json(db.getClients());
 });
 
 app.post('/api/clients', async (req, res) => {
-    try {
-        let clientData = req.body;
-        clientData = await processAddress(clientData);
-        
-        const newClient = { 
-            id: Date.now().toString(), 
-            ...clientData, 
-            status: clientData.status || 'חדש',
-            createdAt: new Date().toLocaleDateString('he-IL'),
-            isTrained: false 
-        };
-        
-        db.clients.push(newClient);
-        res.status(201).json({ success: true, client: newClient });
-    } catch (err) {
-        res.status(500).json({ message: "שגיאה בשרת" });
-    }
+  try {
+    const clientData = await processAddress(req.body);
+    const newClient = {
+      id: Date.now().toString(),
+      ...clientData,
+      status: clientData.status || 'New',
+      createdAt: new Date().toLocaleDateString('he-IL'),
+      isRegistered: clientData.isRegistered ?? true,
+      isTrained: false
+    };
+
+    db.createClient(newClient);
+    return res.status(201).json({ success: true, client: newClient });
+  } catch (err) {
+    console.error('Create client error:', err);
+    return res.status(500).json({ message: 'Server error' });
+  }
 });
 
-app.post('/api/clients/quick-reg', (req, res) => {
-    const { phone, address } = req.body;
-    const token = crypto.randomBytes(16).toString('hex');
-    
-    const newClient = {
-        id: Date.now().toString(),
-        phone,
-        address,
-        token,
-        isRegistered: false, 
-        isTrained: false,
-        status: "ממתין להשלמת פרטים על ידי הלקוח 🔗",
-        createdAt: new Date().toLocaleDateString('he-IL')
-    };
-    
-    db.clients.push(newClient);
-    res.status(201).json({ client: newClient, link: `http://localhost:5173/complete-details/${token}` });
+app.post('/api/clients/quick-reg', async (req, res) => {
+  const { phone, address } = req.body;
+  const token = crypto.randomBytes(16).toString('hex');
+  const clientData = await processAddress({ phone, address });
+  const newClient = {
+    id: Date.now().toString(),
+    ...clientData,
+    token,
+    isRegistered: false,
+    isTrained: false,
+    status: 'Waiting for client details',
+    createdAt: new Date().toLocaleDateString('he-IL')
+  };
+
+  db.createClient(newClient);
+  return res.status(201).json({
+    client: newClient,
+    link: `http://localhost:5173/complete-details/${token}`
+  });
 });
 
 app.get('/api/clients/by-token/:token', (req, res) => {
-    const { token } = req.params;
-    const client = db.clients.find(c => c.token === token);
-    if (client) res.json(client);
-    else res.status(404).json({ message: "טוקן לא תקף" });
+  const client = db.getClientByToken(req.params.token);
+
+  if (!client) {
+    return res.status(404).json({ message: 'Invalid token' });
+  }
+
+  return res.json(client);
 });
 
 app.post('/api/clients/complete-by-token/:token', async (req, res) => {
-    const { token } = req.params;
-    let dynamicData = req.body;
-    const client = db.clients.find(c => c.token === token);
-    
-    if (client) {
-        dynamicData = await processAddress(dynamicData);
-        Object.assign(client, dynamicData); 
-        client.isRegistered = true;
-        client.status = "פרטים הושלמו - ממתין לתיאום הדרכה 📅";
-        delete client.token; 
-        res.json({ success: true });
-    } else {
-        res.status(404).json({ message: "טוקן לא בתוקף" });
-    }
+  const client = db.getClientByToken(req.params.token);
+
+  if (!client) {
+    return res.status(404).json({ message: 'Token expired or invalid' });
+  }
+
+  const dynamicData = await processAddress(req.body);
+  db.updateClient(client.id, {
+    ...dynamicData,
+    isRegistered: true,
+    status: 'Details completed - waiting for scheduling',
+    token: undefined
+  });
+
+  return res.json({ success: true });
 });
 
-// --- נתיב קביעת תור עם חסימת כפילויות מוחלטת ---
 app.patch('/api/clients/:id/schedule', (req, res) => {
-    const { id } = req.params;
-    const { date, time, instructorId } = req.body;
+  const { id } = req.params;
+  const { date, time, instructorId } = req.body;
 
-    // בדיקה: האם המדריך הזה תפוס בשעה הזו אצל דייר אחר?
-    const isDoubleBooked = db.clients.find(c => 
-        String(c.instructorId) === String(instructorId) && 
-        c.scheduledDate === date && 
-        c.scheduledTime === time &&
-        String(c.id) !== String(id)
-    );
+  const isDoubleBooked = db.hasDoubleBooking({
+    instructorId,
+    date,
+    time,
+    excludeClientId: id
+  });
 
-    if (isDoubleBooked) {
-        return res.status(400).json({ 
-            message: `שגיאה: אתה כבר משובץ להדרכה ב-${date} בשעה ${time}` 
-        });
-    }
+  if (isDoubleBooked) {
+    return res.status(400).json({
+      message: `Instructor is already scheduled on ${date} at ${time}`
+    });
+  }
 
-    const client = db.clients.find(c => String(c.id) === String(id));
-    if (client) {
-        client.scheduledDate = date;
-        client.scheduledTime = time;
-        client.instructorId = instructorId;
-        client.status = `תואם לתאריך ${date} בשעה ${time} 📅`;
-        res.json({ success: true, client });
-    } else {
-        res.status(404).json({ message: "דייר לא נמצא" });
-    }
+  const updatedClient = db.updateClient(id, {
+    scheduledDate: date,
+    scheduledTime: time,
+    instructorId,
+    status: `Scheduled for ${date} at ${time}`
+  });
+
+  if (!updatedClient) {
+    return res.status(404).json({ message: 'Client not found' });
+  }
+
+  return res.json({ success: true, client: updatedClient });
+});
+
+app.patch('/api/clients/:id/complete', (req, res) => {
+  const updatedClient = db.updateClient(req.params.id, {
+    isTrained: true,
+    status: 'Training completed',
+    completionDate: new Date().toLocaleDateString('he-IL')
+  });
+
+  if (!updatedClient) {
+    return res.status(404).json({ message: 'Client not found' });
+  }
+
+  return res.json({ success: true, client: updatedClient });
+});
+
+app.put('/api/clients/:id', async (req, res) => {
+  const currentClient = db.getClientById(req.params.id);
+
+  if (!currentClient) {
+    return res.status(404).json({ message: 'Client not found' });
+  }
+
+  let updatedData = req.body;
+  if (updatedData.address && updatedData.address !== currentClient.address) {
+    updatedData = await processAddress(updatedData);
+  }
+
+  const updatedClient = db.updateClient(req.params.id, updatedData);
+  return res.json({ success: true, client: updatedClient });
 });
 
 app.delete('/api/clients/:id', (req, res) => {
-    const index = db.clients.findIndex(c => String(c.id) === String(req.params.id));
-    if (index !== -1) {
-        db.clients.splice(index, 1);
-        return res.json({ success: true });
-    }
-    res.status(404).json({ message: "דייר לא נמצא" });
+  if (!db.deleteClient(req.params.id)) {
+    return res.status(404).json({ message: 'Client not found' });
+  }
+
+  return res.json({ success: true });
 });
 
-// --- ניהול משתמשים והתחברות ---
 app.post('/api/login', (req, res) => {
-    const { username, password } = req.body;
-    
-    // קודם בודקים אדמין קשיח
-    if (username === "admin" && password === "1234") {
-        return res.json({ role: 'admin', user: { name: "מנהל", id: 'admin' } });
-    }
-    
-    // אחר כך בודקים במערך המדריכים
-    const inst = db.instructors.find(i => i.username === username && i.password === password);
-    if (inst) {
-        if (!inst.isActive) return res.status(403).json({ message: "חשבון מוקפא" });
-        return res.json({ role: 'instructor', user: inst });
-    }
-    
-    res.status(401).json({ message: "שם משתמש או סיסמה לא נכונים" });
+  const { username, password } = req.body;
+
+  if (username === 'admin' && password === '1234') {
+    return res.json({ role: 'admin', user: { name: 'Admin', id: 'admin' } });
+  }
+
+  const instructor = db
+    .getInstructors()
+    .find((item) => item.username === username && item.password === password);
+
+  if (!instructor) {
+    return res.status(401).json({ message: 'Invalid username or password' });
+  }
+
+  if (!instructor.isActive) {
+    return res.status(403).json({ message: 'Account is inactive' });
+  }
+
+  return res.json({ role: 'instructor', user: instructor });
 });
 
-app.get('/api/instructors', (req, res) => res.json(db.instructors));
+app.get('/api/instructors', (req, res) => {
+  return res.json(db.getInstructors());
+});
+
 app.post('/api/instructors', (req, res) => {
-    const newInstructor = { id: 'inst_' + Date.now(), ...req.body, isActive: true };
-    db.instructors.push(newInstructor);
-    res.status(201).json(newInstructor);
+  const newInstructor = {
+    id: `inst_${Date.now()}`,
+    ...req.body,
+    isActive: true
+  };
+
+  db.createInstructor(newInstructor);
+  return res.status(201).json(newInstructor);
 });
 
-// --- הגדרות שדות וסטטיסטיקה ---
-app.get('/api/settings/fields', (req, res) => res.json(db.formFields || []));
+app.patch('/api/instructors/:id', (req, res) => {
+  const updatedInstructor = db.updateInstructor(req.params.id, req.body);
+
+  if (!updatedInstructor) {
+    return res.status(404).json({ message: 'Instructor not found' });
+  }
+
+  return res.json({ success: true, instructor: updatedInstructor });
+});
+
+app.get('/api/settings/fields', (req, res) => {
+  return res.json(db.getFormFields());
+});
+
 app.post('/api/settings/fields', (req, res) => {
-    db.formFields = req.body.fields;
-    res.json({ success: true });
+  const fields = Array.isArray(req.body.fields) ? req.body.fields : [];
+  db.setFormFields(fields);
+  return res.json({ success: true });
 });
 
 app.get('/api/stats', (req, res) => {
-    res.json({
-        total: db.clients.length,
-        completed: db.clients.filter(c => c.isTrained).length,
-        pending: db.clients.filter(c => !c.isTrained).length
-    });
+  return res.json(db.getStats());
 });
 
-const PORT = 5000;
-app.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));
-// 1. סימון הדרכה כבוצעה
-app.patch('/api/clients/:id/complete', (req, res) => {
-    const { id } = req.params;
-    const client = db.clients.find(c => String(c.id) === String(id));
-    
-    if (client) {
-        client.isTrained = true;
-        client.status = "הדרכה בוצעה ✅";
-        client.completionDate = new Date().toLocaleDateString('he-IL');
-        res.json({ success: true, client });
-    } else {
-        res.status(404).json({ message: "דייr לא נמצא" });
-    }
-});
-
-// 2. עדכון פרטי דייר כלליים (עריכה)
-app.put('/api/clients/:id', async (req, res) => {
-    const { id } = req.params;
-    let updatedData = req.body;
-
-    const index = db.clients.findIndex(c => String(c.id) === String(id));
-    if (index !== -1) {
-        // אם הכתובת השתנתה, נעדכן גם קואורדינטות
-        if (updatedData.address && updatedData.address !== db.clients[index].address) {
-            const fields = db.formFields || [];
-            const addressField = fields.find(f => f.type === 'address');
-            if (addressField) {
-                try {
-                    const geo = await geocoder.geocode(updatedData.address);
-                    if (geo.length > 0) {
-                        updatedData.lat = geo[0].latitude;
-                        updatedData.lng = geo[0].longitude;
-                    }
-                } catch (e) { console.error("Geocode error on update"); }
-            }
-        }
-        
-        db.clients[index] = { ...db.clients[index], ...updatedData };
-        res.json({ success: true, client: db.clients[index] });
-    } else {
-        res.status(404).json({ message: "דייר לא נמצא" });
-    }
-});
-app.get('/api/stats', (req, res) => {
-    const total = db.clients.length;
-    const completed = db.clients.filter(c => c.isTrained).length;
-    const pending = db.clients.filter(c => !c.isTrained && c.scheduledDate).length; // שובצו אך טרם בוצעו
-    const waiting = db.clients.filter(c => !c.scheduledDate).length; // ממתינים לשיבוץ בכלל
-
-    // בונוס: הדרכות לפי מדריך (לגרף עמודות)
-    const instructorStats = db.instructors.map(inst => ({
-        name: inst.name,
-        count: db.clients.filter(c => String(c.instructorId) === String(inst.id) && c.isTrained).length
-    }));
-
-    res.json({
-        total,
-        completed,
-        pending,
-        waiting,
-        instructorStats
-    });
-});
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

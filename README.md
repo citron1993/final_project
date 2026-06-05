@@ -4,7 +4,7 @@
 
 - Client: React + Vite
 - Server: Node.js + Express
-- Data: שמירה בזיכרון דרך קובץ `server/db.js`
+- Data: SQLite דרך קובץ `server/database.sqlite`
 
 ## מבנה הפרויקט
 
@@ -85,6 +85,6 @@ npm run preview
 
 ## הערות
 
-- הפרויקט משתמש בנתונים בזיכרון, ולכן נתונים שנוספו בזמן ריצה נמחקים לאחר הפעלה מחדש של השרת.
+- הפרויקט משתמש ב-SQLite, ולכן נתונים שנוספו בזמן ריצה נשמרים גם לאחר הפעלה מחדש של השרת.
 - אין להעלות את תיקיות `node_modules` לגיט. הן נוצרות מחדש באמצעות `npm install`.
 - כתובת ה-API בצד הלקוח מוגדרת בקובץ `client/src/services/api.js`.
