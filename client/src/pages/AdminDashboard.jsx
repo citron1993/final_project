@@ -9,17 +9,20 @@ const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('stats');
   const [clients, setClients] = useState([]);
   const [fields, setFields] = useState([]);
+  const [instructors, setInstructors] = useState([]);
   const [stats, setStats] = useState(null);
 
   const loadAllData = async () => {
     try {
-      const [clientsRes, fieldsRes, statsRes] = await Promise.all([
+      const [clientsRes, fieldsRes, instructorsRes, statsRes] = await Promise.all([
         axios.get('http://localhost:5000/api/clients'),
         axios.get('http://localhost:5000/api/settings/fields'),
+        axios.get('http://localhost:5000/api/instructors'),
         axios.get('http://localhost:5000/api/stats')
       ]);
       setClients(clientsRes.data);
       setFields(fieldsRes.data);
+      setInstructors(instructorsRes.data);
       setStats(statsRes.data);
     } catch (err) {
       console.error("Error loading dashboard data:", err);
@@ -50,7 +53,7 @@ const AdminDashboard = () => {
         return (
           <div style={styles.card}>
             <h3 style={styles.contentTitle}>📇 מאגר דיירים</h3>
-            <ClientsTable clients={clients} fields={fields} />
+            <ClientsTable clients={clients} fields={fields} instructors={instructors} />
           </div>
         );
       case 'formSettings':
