@@ -30,17 +30,6 @@ const AdminDashboard = () => {
     loadAllData();
   }, []);
 
-  const handleDeleteClient = async (id) => {
-    if (window.confirm('האם אתה בטוח שברצונך למחוק דייר זה?')) {
-      try {
-        await axios.delete(`http://localhost:5000/api/clients/${id}`);
-        loadAllData();
-      } catch (err) {
-        alert('שגיאה במחיקה');
-      }
-    }
-  };
-
   const renderContent = () => {
     switch (activeTab) {
       case 'stats':
@@ -61,7 +50,7 @@ const AdminDashboard = () => {
         return (
           <div style={styles.card}>
             <h3 style={styles.contentTitle}>📇 מאגר דיירים</h3>
-            <ClientsTable clients={clients} fields={fields} onDelete={handleDeleteClient} />
+            <ClientsTable clients={clients} fields={fields} />
           </div>
         );
       case 'formSettings':
@@ -132,10 +121,10 @@ const styles = {
   headerTop: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '15px 0', borderBottom: '1px solid #eee' },
   logo: { margin: 0, fontSize: '20px', color: '#2c3e50' },
   logoutBtn: { backgroundColor: 'transparent', border: '1px solid #e74c3c', color: '#e74c3c', padding: '5px 15px', borderRadius: '5px', cursor: 'pointer', transition: '0.3s' },
-  tabsNav: { display: 'flex', gap: '5px', marginTop: '5px' },
-  tabBtn: { padding: '12px 25px', border: 'none', background: 'none', cursor: 'pointer', fontSize: '15px', color: '#7f8c8d', borderBottom: '3px solid transparent', transition: '0.2s' },
-  activeTabBtn: { padding: '12px 25px', border: 'none', background: 'none', cursor: 'pointer', fontSize: '15px', color: '#3498db', borderBottom: '3px solid #3498db', fontWeight: 'bold' },
-  main: { padding: '30px', maxWidth: '1200px', margin: '0 auto' },
+  tabsNav: { display: 'flex', gap: '5px', marginTop: '5px', overflowX: 'auto', paddingBottom: '2px' },
+  tabBtn: { padding: '12px 18px', border: 'none', background: 'none', cursor: 'pointer', fontSize: '15px', color: '#7f8c8d', borderBottom: '3px solid transparent', transition: '0.2s', whiteSpace: 'nowrap' },
+  activeTabBtn: { padding: '12px 18px', border: 'none', background: 'none', cursor: 'pointer', fontSize: '15px', color: '#3498db', borderBottom: '3px solid #3498db', fontWeight: 'bold', whiteSpace: 'nowrap' },
+  main: { padding: '16px', maxWidth: '1200px', margin: '0 auto' },
   contentTitle: { marginBottom: '20px', color: '#34495e', fontSize: '18px' },
   card: { backgroundColor: '#fff', padding: '25px', borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' },
   fadeAnim: { animation: 'fadeIn 0.5s ease-in' }

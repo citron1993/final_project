@@ -1,102 +1,131 @@
-import React from 'react';
-
-const ClientsTable = ({ clients, fields = [], onDelete }) => {
+const ClientsTable = ({ clients, fields = [] }) => {
   return (
-    <div style={styles.tableWrapper}>
-      <table style={styles.table}>
-        <thead>
-          <tr style={styles.headerRow}>
-            <th style={styles.th}>סטטוס</th>
-            {/* עמודות דינמיות לפי מה שהמנהל הגדיר */}
-            {fields.map(field => (
-              <th key={field.id} style={styles.th}>{field.label}</th>
-            ))}
-            <th style={styles.th}>פעולות</th>
-          </tr>
-        </thead>
-        <tbody>
-          {clients.length > 0 ? (
-            clients.map((client) => (
-              <tr key={client.id} style={styles.tr}>
-                <td style={styles.td}>
-                  <span style={getStatusStyle(client.status)}>{client.status}</span>
-                </td>
-                
-                {/* הצגת המידע לפי השדות הדינמיים */}
-                {fields.map(field => (
-                  <td key={field.id} style={styles.td}>
-                    {client[field.id] || '---'}
-                  </td>
-                ))}
+    <div style={styles.grid}>
+      {clients.length > 0 ? (
+        clients.map((client) => (
+          <article key={client.id} style={styles.card}>
+            <div style={styles.cardHeader}>
+              <span style={getStatusStyle(client)}>{getStatusLabel(client)}</span>
+              <span style={styles.date}>{client.createdAt || 'ללא תאריך'}</span>
+            </div>
 
-                <td style={styles.td}>
-                  <button 
-                    onClick={() => onDelete(client.id)} 
-                    style={styles.deleteBtn}
-                  >
-                    🗑️ מחק
-                  </button>
-                </td>
-              </tr>
-            ))
-          ) : (
-            <tr>
-              <td colSpan={fields.length + 2} style={{ padding: '20px', textAlign: 'center', color: '#95a5a6' }}>
-                אין דיירים להצגה
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
+            <h3 style={styles.clientName}>
+              {client.firstName || 'דייר'} {client.lastName || ''}
+            </h3>
+
+            <div style={styles.detailsGrid}>
+              {fields.map((field) => (
+                <div key={field.id} style={styles.detail}>
+                  <span style={styles.detailLabel}>{field.label}</span>
+                  <span style={styles.detailValue}>{client[field.id] || '---'}</span>
+                </div>
+              ))}
+            </div>
+          </article>
+        ))
+      ) : (
+        <div style={styles.emptyState}>אין דיירים להצגה</div>
+      )}
     </div>
   );
 };
 
-// פונקציה לעיצוב הסטטוס
-const getStatusStyle = (status) => {
-  const base = { padding: '4px 8px', borderRadius: '4px', fontSize: '12px', fontWeight: 'bold' };
-  if (status?.includes('בוצע')) return { ...base, backgroundColor: '#d4edda', color: '#155724' };
-  if (status?.includes('תואם')) return { ...base, backgroundColor: '#fff3cd', color: '#856404' };
-  return { ...base, backgroundColor: '#e2e3e5', color: '#383d41' };
+const getStatusLabel = (client) => {
+  if (client.isTrained) {
+    return 'הדרכה בוצעה';
+  }
+
+  if (client.scheduledDate) {
+    return 'ממתין להדרכה';
+  }
+
+  if (!client.isRegistered) {
+    return 'ממתין להשלמת פרטים';
+  }
+
+  return 'טרם שובץ';
+};
+
+const getStatusStyle = (client) => {
+  const base = {
+    padding: '5px 9px',
+    borderRadius: '999px',
+    fontSize: '12px',
+    fontWeight: '700',
+    width: 'fit-content'
+  };
+
+  if (client.isTrained) {
+    return { ...base, backgroundColor: '#dcfce7', color: '#166534' };
+  }
+
+  if (client.scheduledDate) {
+    return { ...base, backgroundColor: '#fef3c7', color: '#92400e' };
+  }
+
+  if (!client.isRegistered) {
+    return { ...base, backgroundColor: '#dbeafe', color: '#1d4ed8' };
+  }
+
+  return { ...base, backgroundColor: '#e2e8f0', color: '#334155' };
 };
 
 const styles = {
-  tableWrapper: {
-    overflowX: 'auto',
-    backgroundColor: 'white',
-    borderRadius: '8px',
+  grid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
+    gap: '14px'
   },
-  table: {
-    width: '100%',
-    borderCollapse: 'collapse',
-    textAlign: 'right',
-    direction: 'rtl',
+  card: {
+    backgroundColor: '#fff',
+    border: '1px solid #e2e8f0',
+    borderRadius: '10px',
+    padding: '16px',
+    display: 'grid',
+    gap: '14px',
+    boxShadow: '0 4px 12px rgba(15, 23, 42, 0.05)'
   },
-  headerRow: {
-    backgroundColor: '#f8f9fa',
-    borderBottom: '2px solid #dee2e6',
+  cardHeader: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    gap: '10px',
+    alignItems: 'center',
+    flexWrap: 'wrap'
   },
-  th: {
-    padding: '12px 15px',
-    color: '#495057',
+  date: { color: '#64748b', fontSize: '12px' },
+  clientName: {
+    margin: 0,
+    color: '#1e293b',
+    fontSize: '18px',
+    lineHeight: 1.25
+  },
+  detailsGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))',
+    gap: '10px'
+  },
+  detail: {
+    display: 'grid',
+    gap: '3px',
+    minWidth: 0
+  },
+  detailLabel: {
+    color: '#64748b',
+    fontSize: '12px',
+    fontWeight: '700'
+  },
+  detailValue: {
+    color: '#334155',
     fontSize: '14px',
+    overflowWrap: 'anywhere'
   },
-  tr: {
-    borderBottom: '1px solid #eee',
-  },
-  td: {
-    padding: '12px 15px',
-    fontSize: '14px',
-    color: '#2c3e50',
-  },
-  deleteBtn: {
-    backgroundColor: '#ff4d4d',
-    color: 'white',
-    border: 'none',
-    padding: '5px 10px',
-    borderRadius: '4px',
-    cursor: 'pointer',
-    fontSize: '12px'
+  emptyState: {
+    backgroundColor: '#fff',
+    border: '1px solid #e2e8f0',
+    borderRadius: '10px',
+    padding: '22px',
+    textAlign: 'center',
+    color: '#64748b'
   }
 };
 

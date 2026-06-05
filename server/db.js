@@ -168,13 +168,36 @@ const getStats = () => {
   const pending = clients.filter((client) => !client.isTrained && client.scheduledDate).length;
   const waiting = clients.filter((client) => !client.scheduledDate).length;
   const instructorStats = instructors.map((instructor) => ({
+    id: instructor.id,
     name: instructor.name,
-    count: clients.filter(
+    username: instructor.username,
+    isActive: instructor.isActive,
+    assigned: clients.filter((client) => String(client.instructorId) === String(instructor.id)).length,
+    completed: clients.filter(
       (client) => String(client.instructorId) === String(instructor.id) && client.isTrained
+    ).length,
+    pending: clients.filter(
+      (client) =>
+        String(client.instructorId) === String(instructor.id) &&
+        client.scheduledDate &&
+        !client.isTrained
+    ).length,
+    unscheduled: clients.filter(
+      (client) =>
+        String(client.instructorId) === String(instructor.id) &&
+        !client.scheduledDate &&
+        !client.isTrained
     ).length
   }));
 
-  return { total, completed, pending, waiting, instructorStats };
+  return {
+    total,
+    completed,
+    pending,
+    waiting,
+    activeInstructors: instructors.filter((instructor) => instructor.isActive).length,
+    instructorStats
+  };
 };
 
 module.exports = {
