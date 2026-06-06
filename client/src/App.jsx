@@ -1,4 +1,3 @@
-import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Login from './pages/Login';
 import AdminDashboard from './pages/AdminDashboard';
@@ -8,22 +7,23 @@ import CompleteDetails from './pages/CompleteDetails';
 // קומפוננטה פשוטה להגנה על נתיבים
 const ProtectedRoute = ({ children, roleRequired }) => {
   const userString = localStorage.getItem('user');
-  
-  // אם אין משתמש במערכת
+
   if (!userString) {
     return <Navigate to="/" replace />;
   }
 
+  let user;
   try {
-    const user = JSON.parse(userString);
-    // בדיקת תפקיד - אם המשתמש לא בתפקיד המתאים, נחזיר אותו ללוגין
-    if (roleRequired && user.role !== roleRequired) {
-      return <Navigate to="/" replace />;
-    }
-    return children;
-  } catch (e) {
+    user = JSON.parse(userString);
+  } catch {
     return <Navigate to="/" replace />;
   }
+
+  if (roleRequired && user.role !== roleRequired) {
+    return <Navigate to="/" replace />;
+  }
+
+  return children;
 };
 
 function App() {

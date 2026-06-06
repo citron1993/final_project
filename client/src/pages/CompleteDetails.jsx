@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import axios from 'axios';
 
@@ -12,16 +12,16 @@ const CompleteDetails = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // 1. טעינת הגדרות השדות מהמנהל
-        const fieldsRes = await axios.get('http://localhost:5000/api/settings/fields');
+        // 1. ×˜×¢×™× ×ª ×”×’×“×¨×•×ª ×”×©×“×•×ª ×ž×”×ž× ×”×œ
+        const fieldsRes = await axios.get('/api/settings/fields');
         setFields(fieldsRes.data);
 
-        // 2. טעינת נתוני הלקוח הקיימים (אלו שהמדריך הזין מראש)
-        const clientRes = await axios.get(`http://localhost:5000/api/clients/by-token/${token}`);
+        // 2. ×˜×¢×™× ×ª × ×ª×•× ×™ ×”×œ×§×•×— ×”×§×™×™×ž×™× (××œ×• ×©×”×ž×“×¨×™×š ×”×–×™×Ÿ ×ž×¨××©)
+        const clientRes = await axios.get(`/api/clients/by-token/${token}`);
         setFormData(clientRes.data);
       } catch (err) {
         console.error("Error loading data:", err);
-        alert("הקישור אינו תקף או שפג תוקפו");
+        alert("×”×§×™×©×•×¨ ××™× ×• ×ª×§×£ ××• ×©×¤×’ ×ª×•×§×¤×•");
       } finally {
         setLoading(false);
       }
@@ -39,7 +39,7 @@ const CompleteDetails = () => {
     if (emptyRequiredFields.length > 0) {
       const fieldNames = emptyRequiredFields.map(field => field.label).join(', ');
       const approved = window.confirm(
-        `השדות הבאים ריקים: ${fieldNames}. האם להמשיך בכל זאת?`
+        `×”×©×“×•×ª ×”×‘××™× ×¨×™×§×™×: ${fieldNames}. ×”×× ×œ×”×ž×©×™×š ×‘×›×œ ×–××ª?`
       );
 
       if (!approved) {
@@ -48,39 +48,39 @@ const CompleteDetails = () => {
     }
 
     try {
-      // שליחת כל ה-formData (כולל השדות הנעולים) חזרה לשרת
-      await axios.post(`http://localhost:5000/api/clients/complete-by-token/${token}`, formData);
+      // ×©×œ×™×—×ª ×›×œ ×”-formData (×›×•×œ×œ ×”×©×“×•×ª ×”× ×¢×•×œ×™×) ×—×–×¨×” ×œ×©×¨×ª
+      await axios.post(`/api/clients/complete-by-token/${token}`, formData);
       setSubmitted(true);
-    } catch (err) {
-      alert("שגיאה בשליחת הפרטים");
+    } catch {
+      alert("×©×’×™××” ×‘×©×œ×™×—×ª ×”×¤×¨×˜×™×");
     }
   };
 
-  if (loading) return <div style={styles.message}>טוען פרטים...</div>;
-  if (submitted) return <div style={styles.message}>✅ הפרטים נשלחו בהצלחה! ניצור איתך קשר בהקדם.</div>;
+  if (loading) return <div style={styles.message}>×˜×•×¢×Ÿ ×¤×¨×˜×™×...</div>;
+  if (submitted) return <div style={styles.message}>âœ… ×”×¤×¨×˜×™× × ×©×œ×—×• ×‘×”×¦×œ×—×”! × ×™×¦×•×¨ ××™×ª×š ×§×©×¨ ×‘×”×§×“×.</div>;
 
   return (
     <div style={styles.container}>
       <form onSubmit={handleSubmit} style={styles.card}>
-        <h2 style={styles.title}>השלמת פרטי רישום</h2>
-        <p style={styles.subtitle}>אנא מלא את הפרטים החסרים כדי שנוכל לתאם הדרכה</p>
+        <h2 style={styles.title}>×”×©×œ×ž×ª ×¤×¨×˜×™ ×¨×™×©×•×</h2>
+        <p style={styles.subtitle}>×× × ×ž×œ× ××ª ×”×¤×¨×˜×™× ×”×—×¡×¨×™× ×›×“×™ ×©× ×•×›×œ ×œ×ª×× ×”×“×¨×›×”</p>
         
         {fields.map(field => {
-          // בדיקה האם השדה צריך להיות נעול (טלפון או כתובת)
+          // ×‘×“×™×§×” ×”×× ×”×©×“×” ×¦×¨×™×š ×œ×”×™×•×ª × ×¢×•×œ (×˜×œ×¤×•×Ÿ ××• ×›×ª×•×‘×ª)
           const isLocked = field.id === 'phone' || field.type === 'address';
 
           return (
             <div key={field.id} style={styles.fieldGroup}>
               <label style={styles.label}>
                 {field.label}
-                {isLocked && <span style={styles.lockedLabel}> (שדה מאומת)</span>}
+                {isLocked && <span style={styles.lockedLabel}> (×©×“×” ×ž××•×ž×ª)</span>}
               </label>
               <input
                 type={field.type === 'address' ? 'text' : field.type}
                 value={formData[field.id] || ''}
                 onChange={(e) => !isLocked && setFormData({ ...formData, [field.id]: e.target.value })}
                 aria-required={field.required}
-                disabled={isLocked} // נעילת השדה
+                disabled={isLocked} // × ×¢×™×œ×ª ×”×©×“×”
                 style={{
                   ...styles.input,
                   backgroundColor: isLocked ? '#f5f6fa' : 'white',
@@ -93,7 +93,7 @@ const CompleteDetails = () => {
           );
         })}
         
-        <button type="submit" style={styles.button}>אישור ושליחת פרטים</button>
+        <button type="submit" style={styles.button}>××™×©×•×¨ ×•×©×œ×™×—×ª ×¤×¨×˜×™×</button>
       </form>
     </div>
   );
@@ -113,3 +113,4 @@ const styles = {
 };
 
 export default CompleteDetails;
+

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import axios from 'axios';
 import InstructorTabs from '../components/Instructor/InstructorTabs';
 import QuickRegistration from '../components/Instructor/QuickRegistration';
@@ -20,8 +20,8 @@ const InstructorDashboard = () => {
   const loadData = async () => {
     try {
       const [clientsRes, fieldsRes] = await Promise.all([
-        axios.get('http://localhost:5000/api/clients'),
-        axios.get('http://localhost:5000/api/settings/fields')
+        axios.get('/api/clients'),
+        axios.get('/api/settings/fields')
       ]);
       setClients(clientsRes.data);
       setFields(fieldsRes.data);
@@ -57,11 +57,11 @@ const InstructorDashboard = () => {
         status: `תואם לתאריך ${editingClient.scheduledDate} בשעה ${editingClient.scheduledTime} 📅`
       };
 
-      await axios.put(`http://localhost:5000/api/clients/${editingClient.id}`, finalClientData);
+      await axios.put(`/api/clients/${editingClient.id}`, finalClientData);
       alert("השיבוץ נשמר בהצלחה! 📅");
       loadData(); // רענון הנתונים
       setEditingClient(null); // סגירת המודל
-    } catch (err) { 
+    } catch { 
       alert("שגיאה בעדכון הפרטים"); 
     }
   };
@@ -69,11 +69,11 @@ const InstructorDashboard = () => {
   const handleCompleteLesson = async (clientId) => {
     if(!window.confirm("האם לסמן את ההדרכה כבוצעה?")) return;
     try {
-      await axios.patch(`http://localhost:5000/api/clients/${clientId}/complete`);
+      await axios.patch(`/api/clients/${clientId}/complete`);
       alert("ההדרכה בוצעה בהצלחה! ✅");
       loadData();
       setEditingClient(null);
-    } catch (err) { alert("שגיאה בעדכון הסטטוס"); }
+    } catch { alert("שגיאה בעדכון הסטטוס"); }
   };
 
   const renderContent = () => {
@@ -91,7 +91,7 @@ const InstructorDashboard = () => {
           </div>
         );
 
-      case 'clients':
+      case 'clients': {
         const unassigned = clients.filter(c => 
           !c.instructorId && 
           (`${c.firstName} ${c.lastName}`.toLowerCase().includes(searchTerm.toLowerCase()) || 
@@ -130,8 +130,9 @@ const InstructorDashboard = () => {
             </div>
           </div>
         );
+      }
 
-      case 'calendar':
+      case 'calendar': {
         const myLessons = clients.filter(c => c.instructorId === user.id);
         const filteredLessons = myLessons.filter(c => 
           filterStatus === 'all' || (filterStatus === 'pending' ? !c.isTrained : c.isTrained)
@@ -152,6 +153,7 @@ const InstructorDashboard = () => {
             </div>
           </div>
         );
+      }
 
       case 'map':
         return (
@@ -253,3 +255,4 @@ const styles = {
 };
 
 export default InstructorDashboard;
+

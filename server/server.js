@@ -7,7 +7,9 @@ const db = require('./db');
 const app = express();
 const geocoder = NodeGeocoder({ provider: 'openstreetmap' });
 
-app.use(cors({ origin: 'http://localhost:5173' }));
+const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+
+app.use(cors({ origin: frontendUrl }));
 app.use(express.json());
 
 const processAddress = async (clientData) => {
@@ -79,7 +81,7 @@ app.post('/api/clients/quick-reg', async (req, res) => {
   db.createClient(newClient);
   return res.status(201).json({
     client: newClient,
-    link: `http://localhost:5173/complete-details/${token}`
+    link: `${frontendUrl}/complete-details/${token}`
   });
 });
 

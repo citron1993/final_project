@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import axios from 'axios';
 
 // 1. הגדרת העיצובים מחוץ לקומפוננטה כדי שלא יהיו שגיאות Reference
@@ -62,7 +62,7 @@ const QuickRegistration = ({ onClientAdded }) => {
     setLoading(true);
     try {
       // שליחה לשרת (פורט 5000)
-      const res = await axios.post('http://localhost:5000/api/clients/quick-reg', formData);
+      const res = await axios.post('/api/clients/quick-reg', formData);
       setGeneratedLink(res.data.link);
       if (onClientAdded) onClientAdded();
     } catch (err) {
@@ -122,3 +122,4 @@ const QuickRegistration = ({ onClientAdded }) => {
 };
 
 export default QuickRegistration;
+

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import axios from 'axios';
 import InstructorManager from '../components/Admin/InstructorManager';
 import ClientsTable from '../components/Admin/ClientsTable';
@@ -15,10 +15,10 @@ const AdminDashboard = () => {
   const loadAllData = async () => {
     try {
       const [clientsRes, fieldsRes, instructorsRes, statsRes] = await Promise.all([
-        axios.get('http://localhost:5000/api/clients'),
-        axios.get('http://localhost:5000/api/settings/fields'),
-        axios.get('http://localhost:5000/api/instructors'),
-        axios.get('http://localhost:5000/api/stats')
+        axios.get('/api/clients'),
+        axios.get('/api/settings/fields'),
+        axios.get('/api/instructors'),
+        axios.get('/api/stats')
       ]);
       setClients(clientsRes.data);
       setFields(fieldsRes.data);
@@ -138,3 +138,4 @@ const styles = {
 };
 
 export default AdminDashboard;
+

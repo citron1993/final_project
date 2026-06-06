@@ -1,4 +1,3 @@
-import React from 'react';
 
 const InstructorTabs = ({ activeTab, setActiveTab }) => {
   const tabs = [

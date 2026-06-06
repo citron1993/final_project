@@ -5,18 +5,18 @@ const FieldManager = ({ onFieldsUpdated }) => {
   const [fields, setFields] = useState([]);
   const [newField, setNewField] = useState({ label: '', type: 'text', required: true });
 
-  useEffect(() => {
-    fetchFields();
-  }, []);
-
-  const fetchFields = async () => {
+  async function fetchFields() {
     try {
-      const res = await axios.get('http://localhost:5000/api/settings/fields?includeInactive=true');
+      const res = await axios.get('/api/settings/fields?includeInactive=true');
       setFields(res.data || []);
     } catch (err) {
       console.error('Error fetching fields:', err);
     }
-  };
+  }
+
+  useEffect(() => {
+    fetchFields();
+  }, []);
 
   const addField = async () => {
     const label = newField.label.trim();
@@ -26,7 +26,8 @@ const FieldManager = ({ onFieldsUpdated }) => {
       return;
     }
 
-    const id = 'field_' + Date.now();
+    const safeLabel = label.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+    const id = `field_${safeLabel || 'custom'}_${fields.length + 1}`;
     const updatedFields = [...fields, { ...newField, label, id, isActive: true }];
 
     await saveFields(updatedFields);
@@ -52,13 +53,13 @@ const FieldManager = ({ onFieldsUpdated }) => {
 
   const saveFields = async (updatedFields) => {
     try {
-      await axios.post('http://localhost:5000/api/settings/fields', { fields: updatedFields });
+      await axios.post('/api/settings/fields', { fields: updatedFields });
       setFields(updatedFields);
 
       if (onFieldsUpdated) {
         onFieldsUpdated();
       }
-    } catch (err) {
+    } catch {
       window.alert('שגיאה בשמירת השדות');
     }
   };

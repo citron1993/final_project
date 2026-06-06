@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import axios from 'axios';
 
 const InstructorManager = ({ onInstructorsUpdated }) => {
@@ -6,18 +6,18 @@ const InstructorManager = ({ onInstructorsUpdated }) => {
   const [newInst, setNewInst] = useState({ name: '', username: '', password: '' });
   const [error, setError] = useState('');
 
-  const refreshInstructors = async () => {
-    const res = await axios.get('http://localhost:5000/api/instructors');
+  const refreshInstructors = useCallback(async () => {
+    const res = await axios.get('/api/instructors');
     setInstructors(res.data);
 
     if (onInstructorsUpdated) {
       onInstructorsUpdated();
     }
-  };
+  }, [onInstructorsUpdated]);
 
   useEffect(() => {
     refreshInstructors();
-  }, []);
+  }, [refreshInstructors]);
 
   const handleCreate = async (e) => {
     e.preventDefault();
@@ -35,7 +35,7 @@ const InstructorManager = ({ onInstructorsUpdated }) => {
     }
 
     try {
-      await axios.post('http://localhost:5000/api/instructors', payload);
+      await axios.post('/api/instructors', payload);
       setNewInst({ name: '', username: '', password: '' });
       refreshInstructors();
     } catch (err) {
@@ -49,7 +49,7 @@ const InstructorManager = ({ onInstructorsUpdated }) => {
   };
 
   const toggleStatus = async (id, currentStatus) => {
-    await axios.patch(`http://localhost:5000/api/instructors/${id}`, {
+    await axios.patch(`/api/instructors/${id}`, {
       isActive: currentStatus === false
     });
     refreshInstructors();
@@ -63,7 +63,7 @@ const InstructorManager = ({ onInstructorsUpdated }) => {
       return;
     }
 
-    await axios.patch(`http://localhost:5000/api/instructors/${id}`, { password });
+    await axios.patch(`/api/instructors/${id}`, { password });
     window.alert('הסיסמה שונתה בהצלחה');
     refreshInstructors();
   };

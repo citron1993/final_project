@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 
@@ -14,7 +14,7 @@ const Login = () => {
     setLoading(true);
     
     try {
-      const res = await axios.post('http://localhost:5000/api/login', credentials);
+      const res = await axios.post('/api/login', credentials);
       
       // חשוב: אנחנו מוודאים שה-Role נמצא בתוך אובייקט המשתמש לצורך ה-ProtectedRoute
       const userData = {
@@ -75,7 +75,7 @@ const Login = () => {
         <div style={styles.testInfo}>
           <p style={{margin: '5px 0'}}><strong>סביבת בדיקות</strong></p>
           <p style={{margin: '2px 0'}}>מדריך: israel1 / 123</p>
-          <p style={{margin: '2px 0'}}>מנהל: admin / admin</p>
+          <p style={{margin: '2px 0'}}>מנהל: admin / 1234</p>
         </div>
       </form>
     </div>
@@ -161,3 +161,4 @@ const styles = {
 };
 
 export default Login;
+

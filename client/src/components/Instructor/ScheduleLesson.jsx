@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import axios from 'axios';
 
 const ScheduleLesson = ({ clients, onScheduled }) => {
@@ -12,21 +12,24 @@ const ScheduleLesson = ({ clients, onScheduled }) => {
 
   const handleSubmit = async (e) => {
   e.preventDefault();
+  setLoading(true);
   
   // שליפת המשתמש המחובר מה-localStorage
   const user = JSON.parse(localStorage.getItem('user'));
   const instructorId = user?.id || "unknown";
 
   try {
-    await axios.patch(`http://localhost:5000/api/clients/${selectedId}/schedule`, { 
+    await axios.patch(`/api/clients/${selectedId}/schedule`, { 
       date, 
       time, 
       instructorId // שליחת ה-ID לשיוך
     });
     alert('ההדרכה תואמה והדייר שויך אליך!');
     if (onScheduled) onScheduled();
-  } catch (err) {
+  } catch {
     alert('שגיאה בתיאום');
+  } finally {
+    setLoading(false);
   }
 };
 
@@ -76,3 +79,4 @@ const inputStyle = { padding: '12px', borderRadius: '6px', border: '1px solid #d
 const buttonStyle = { padding: '12px', borderRadius: '6px', border: 'none', backgroundColor: '#8e44ad', color: '#fff', fontWeight: 'bold', cursor: 'pointer' };
 
 export default ScheduleLesson;
+
